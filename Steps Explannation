@@ -1,0 +1,166 @@
+Steps Explanation
+
+ 
+
+Abstract:
+ 
+
+ 
+Insurance companies that sell auto insurance are using machine learning (ML) to drive improvements in customer service, fraud detection, and premium determination. For auto insurance underwriters, it is important for them to forecast customers probability of getting into an accident in order to determine customers’ premiums or eligibility. In this project, we will use machine learning techniques on a large dataset from one particular insurance company. First, we will train the machine with the training set, then build statistical models to find what factors contributing to accidents. Finally, we will come to model selection to choose the best suit in this particular case.
+
+
+##################################################################################################################################################################
+
+Data Exploration/Analysis:
+Python pandas Data frame suggests that the training dataset is an 8161 rows × 25 columns matrix, in which INDEX is unrelated and gets dropped. Data is mixed with both numeric values and categorical values. Descriptive analysis shows that the Target_Flag is binary, therefore logistic regression will be used in prediction. There are some columns with missing data [‘YOJ’, ‘AGE’, ‘CAR_AGE’, ‘INCOME’, ‘JOB’, ‘HOME_VAL’]. There are some columns with Max value far away from the mean, suggests outliers exist ['AGE', 'HOMEKIDS', 'YOJ','TRAVTIME', 'BLUEBOOK', 'TIF','OLDCLAIM','CLM_FREQ', 'MVR_PTS',
+'CAR_AGE'] which need to be taken care of before modeling.
+
+##################################################################################################################################################################
+
+
+ 
+Data preparation:
+
+Impute Missing data:
+For variable “YOJ”,” AGE, “CAR_AGE”, the missing values will be imputed by the mean since those variables are continuous data and do not have any characteristic in particular.
+For the variable Income, it is highly associated with another variable “JOB”, so the mean values for “INCOME” are calculated based on different job types. And each missing data in “INCOME” is imputed by the mean of the same job type. The same method is used in imputing missing values in variable” HOME_VAL”, which mean value is calculated based on different income bins.
+Handling outliers:
+The outliers are handled for variable with continuous data. ['AGE', 'HOMEKIDS', 'YOJ','TRAVTIME', 'BLUEBOOK', 'TIF','OLDCLAIM','CLM_FREQ', 'MVR_PTS', 'CAR_AGE']
+For each variable in the list, Q3 and the Interquartile Range are calculated, any data points aboveQ3+1.5*IQR will be considered outliers and replaced by the mean of that particular variable.
+
+Binning data:
+The following categorical variables are binned for model building:
+[‘INCOME’, ‘AGE’, ‘JOB’, ‘CAR_TYPE’, ‘HOME_VAL’, ‘EDUCATION’]
+“INCOME” has been broken down into 6 bins
+["No_Income", "Poor","Lower_Middle","Middle","Upper_Middle","Rich"] mapping:
+[0, 1, 32048, 53413, 106827, 200000, np.inf]
+The cutoff numbers are based on Social Economic Classes Criteria posted by “US NEWS”
+
+“AGE” has been broken down into 3 bins:
+["Young","Middle_Age","Old"] mapping:
+[16,25,60, np.inf]
+The cutoff numbers are based on how Insurance companies generally define age groups
+
+“JOB” has been broken down into 6 bins:
+['Professional', 'z_Blue Collar', 'Clerical', 'Doctor', 'Lawyer', 'Manager', 'Home Maker', 'Student', 'Unknown']
+‘CAR_TYPE’ has been broken down into 6 bins:
+ 
+['Minivan', 'z_SUV', 'Sports Car', 'Van', 'Panel Truck', 'Pickup'] ‘HOME_VAL’ has been broken down into 6 bins: ["No_home","level1","level2","level3","level4","level5"] Mapping:
+[0, 1, 99999, 200000,300000, 400000, np.inf]
+Continuous data listed above are binned by cutoff points, which based on different intuitions. All binned numeric variables are made sure to approximately follow normal distribution on histogram.
+All the variables listed above are binned into many variables, therefore the dummy variables are created in the Data frame to reflect those new variables, and original variables are dropped to avoid multicollinear problems.
+All the binary variables are set to category datatype in order to let Python better understand the data
+Converting Categorical Data into Numeric
+All the categorical data will be converted to binary values (0 or 1) in the Data Frame in order to build the model. Loops and OneHotEncoder package from SKLEARN_PREPROCESSING module are used to achieve this goal. Then all the binary variables are further set to categorical datatype in order to let Python better understand the data.
+##################################################################################################################################################################
+
+
+
+
+
+Model building:
+In order to test model validity, Train_Test Split function from SKLEARN module is used for Cross-validation. And the “logit_insurance(1)” dataset is split into training and testing datasets. Test Size is 0.2. All the models are using Logistic regression, with solver='newton-cg', Maximum Iteration is set to 10000.
+Given the Threshold of TARGET_FLAG as 0.35, which was tested to be the optimum value for Accuracy Trade off.
+Setting the seed(random_state) to 11 to keep the consistency, which makes sure the train and test dataset are the same every time the code is run.
+Model1:
+Model1 takes all the variables from Data Frame into Logistic regression. When the test size is at 0.2, it has the outcomes below:
+Pseudo R-squ.:	0.2252
+Log-Likelihood:	-2931.1s
+ 
+
+
+
+
+Accuracy: 0.79792
+
+
+Model2:
+Model2 removes the variables that are not statistically significant on Model1’s regression result. Variables ['SEX','YOJ','Middle_Age','RED_CAR','CAR_AGE','HOMEKIDS',’OLDCLAIM']]
+are dropped due to its insignificant P-values. Furthermore, some variables are dropped from bins to avoid multicollinear problems. ['Poor','Pickup','PhD',’Unknown’]
+When the test size is at 0.2, Model2 has the outcomes below: Pseudo R-squ.:	0.2244
+Log-Likelihood:	-2934.0
+
+
+
+
+Accuracy: 0.8022
+
+
+Model3:
+Based on model2, model3 adding on interaction terms which are some factors that insurance companies may be interested in. For example, some labels can be risky: Young Male; Unmarried Male; people with no income and has been revoked; Commercial used sports car. Model3 will test that.
+When the test size is at 0.2, Model3 has the outcomes below: Pseudo R-squ.:	0.2245
+Log-Likelihood:	-2934.0
+
+
+
+
+Accuracy:	0.8022
+Model Selection:
+On Insurance companies’ standpoint, they would like to avoid customers who will get into an accident, and it would be extremely costly if the model fails to predict that (False Acceptance in this case). Therefore, we will take that into consideration when selecting our models. We will also adjust our Threshold for TARGET_FLAG to find the optimum value even though the overall accuracy will be scarified/compromised.
+Since model2 and model3 produced nearly identical outcomes, both in Accuracy and Confusion Matrix, we will choose model3 over model2 since it has slightly higher Pseudo-r-square value, and it is more comprehensive than model2. Since Model1 has many insignificant variables which increases the variance, we will use model3 for prediction.
+The detailed Regression result is on Appendix 1:
+
+
+
+Optimization terminated successfully.
+         Current function value: 0.449448
+         Iterations 7
+                           Logit Regression Results                           
+==============================================================================
+Dep. Variable:                      y   No. Observations:                 6528
+Model:                          Logit   Df Residuals:                     6483
+Method:                           MLE   Df Model:                           44
+Date:                Wed, 27 Apr 2022   Pseudo R-squ.:                  0.2244
+Time:                        04:51:08   Log-Likelihood:                -2934.0
+converged:                       True   LL-Null:                       -3782.9
+Covariance Type:            nonrobust   LLR p-value:                     0.000
+=======================================================================================
+                          coef    std err          z      P>|z|      [0.025      0.975]
+---------------------------------------------------------------------------------------
+KIDSDRIV                0.4099      0.062      6.593      0.000       0.288       0.532
+PARENT1                 0.3431      0.107      3.205      0.001       0.133       0.553
+MSTATUS                 0.5657      0.110      5.164      0.000       0.351       0.780
+TRAVTIME                0.0128      0.002      5.993      0.000       0.009       0.017
+CAR_USE                 0.7859      0.105      7.503      0.000       0.581       0.991
+BLUEBOOK            -2.431e-05   5.48e-06     -4.438      0.000    -3.5e-05   -1.36e-05
+TIF                    -0.0587      0.008     -7.026      0.000      -0.075      -0.042
+CLM_FREQ                0.1587      0.028      5.571      0.000       0.103       0.214
+REVOKED                 0.7936      0.094      8.472      0.000       0.610       0.977
+MVR_PTS                 0.1020      0.016      6.481      0.000       0.071       0.133
+URBANICITY             -2.3538      0.126    -18.716      0.000      -2.600      -2.107
+Minivan                -0.6259      0.113     -5.529      0.000      -0.848      -0.404
+Panel Truck            -0.0044      0.165     -0.027      0.979      -0.327       0.318
+Sports Car              0.4695      0.146      3.219      0.001       0.184       0.755
+Van                     0.1187      0.135      0.879      0.380      -0.146       0.383
+z_SUV                   0.0441      0.112      0.395      0.693      -0.175       0.263
+Clerical                0.4821      0.220      2.192      0.028       0.051       0.913
+Doctor                 -0.2715      0.296     -0.918      0.359      -0.851       0.308
+Home Maker              0.2471      0.246      1.006      0.314      -0.234       0.729
+Lawyer                  0.1361      0.188      0.723      0.470      -0.233       0.505
+Manager                -0.4614      0.189     -2.446      0.014      -0.831      -0.092
+Professional            0.1577      0.198      0.798      0.425      -0.230       0.545
+Student                 0.1948      0.253      0.771      0.441      -0.300       0.690
+z_Blue Collar           0.4728      0.206      2.300      0.021       0.070       0.876
+<High School            0.4591      0.227      2.024      0.043       0.015       0.904
+Bachelors               0.0525      0.202      0.259      0.795      -0.344       0.449
+Masters                 0.1868      0.176      1.060      0.289      -0.159       0.532
+z_High School           0.5104      0.209      2.440      0.015       0.100       0.920
+No_home                -1.7226      0.282     -6.107      0.000      -2.275      -1.170
+level1                 -2.0140      0.295     -6.829      0.000      -2.592      -1.436
+level2                 -2.0355      0.269     -7.571      0.000      -2.563      -1.509
+level3                 -2.0228      0.283     -7.152      0.000      -2.577      -1.468
+level4                 -2.1581      0.318     -6.797      0.000      -2.780      -1.536
+level5                 -1.8854      0.346     -5.442      0.000      -2.564      -1.206
+No_Income               0.5782      0.159      3.631      0.000       0.266       0.890
+Lower_Middle           -0.0832      0.118     -0.706      0.480      -0.314       0.148
+Middle                 -0.1972      0.134     -1.466      0.143      -0.461       0.066
+Upper_Middle           -0.4301      0.188     -2.286      0.022      -0.799      -0.061
+Rich                   -0.2009      0.366     -0.549      0.583      -0.918       0.516
+Young                   1.0189      0.392      2.596      0.009       0.250       1.788
+Old                     0.4370      0.183      2.384      0.017       0.078       0.796
+YoungMale               0.1501      0.583      0.257      0.797      -0.993       1.293
+UnmarriedMale          -0.1060      0.118     -0.897      0.369      -0.338       0.126
+RevokedNoincome        -0.3375      0.319     -1.058      0.290      -0.963       0.288
+CommercialSportsCar    -0.5909      0.246     -2.399      0.016      -1.074      -0.108
+
+
